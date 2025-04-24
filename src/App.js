@@ -49,27 +49,48 @@ function App() {
   }, [step, imageFile]);
 
   return (
-    <div className="App">
+    <div className="max-w-md mx-auto p-4">
       {step === 0 && (
-        <UploadStep onFileSelected={file => {
-          setImageFile(file);
-          setStep(1);
-        }}/>
+        <> {/*STEP 1: Upload*/}
+          <h2>Upload a clear selfie</h2> {/*prompt user*/}
+          <input
+            type = "file"
+            accept = "image/*"
+            onChange = {e => {
+              const f = e.target.files?.[0];
+              if (f) {
+                setImageFile(f);
+                setStep(1); {/*set to step 1*/}
+              }
+            }}
+          />
+        </>
       )}
 
       {step === 1 && (
-        <>
+        <> {/* STEP 2: Analyzing Image*/}
+          <h2>Analyzing…</h2>
           <canvas ref={canvasRef} width={200} height={200} className="hidden"/>
-          <p>Analyzing…</p>
         </>
       )}
 
       {step === 2 && (
-        <SuggestStep undertone={undertone}/>
-      )}
-      <img src={logo} className="App-logo" alt="logo" />
-    </div>
-  );
-}
+        <> {/* STEP 3: Suggestions */}
+        <h2>Your undertone is <strong>{undertone}</strong></h2>
+        <div className = "grid gap-4">
+          {products
+            .filter (p => p.tone === undertone)
+            .map(p => (
+              <div key = {p.id} className = "border p-2 rounded">
+                <img src = {p.img} alt = {p.name} className = "h-24 w-full object-cover"/>
+                <p>{p.name}</p>
+              </div>
+            ))
+          }
+        </div>
+      </>
+    )}
+  </div>
+);
 
 export default App;
