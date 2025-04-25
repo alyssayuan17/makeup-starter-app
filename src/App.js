@@ -7,6 +7,7 @@ import ColorThief from "colorthief";
 import UploadStep   from "./UploadStep";
 import AnalyzeStep  from "./AnalyzeStep";
 import SuggestStep  from "./SuggestStep";
+import products from "./products.json"; 
 
 function App() {
   // initialize state and refs
@@ -60,7 +61,7 @@ function App() {
               const f = e.target.files?.[0];
               if (f) {
                 setImageFile(f);
-                setStep(1); {/*set to step 1*/}
+                setStep(1); //set to step 1
               }
             }}
           />
