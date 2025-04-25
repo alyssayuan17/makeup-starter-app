@@ -1,0 +1,21 @@
+[
+    {
+      "id": "warm1",
+      "name": "Peachy Glow Blush",
+      "tone": "warm",
+      "img": "/images/peachy-glow.jpg"
+    },
+    {
+      "id": "cool1",
+      "name": "Rosy Chill Lipstick",
+      "tone": "cool",
+      "img": "/images/rosy-chill.jpg"
+    },
+    {
+      "id": "neutral1",
+      "name": "Everyday Bronze Palette",
+      "tone": "neutral",
+      "img": "/images/bronze-palette.jpg"
+    }
+]
+  

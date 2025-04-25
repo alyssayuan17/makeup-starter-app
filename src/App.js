@@ -1,13 +1,12 @@
 
 // import everything that is needed
-import logo from './logo.svg';
 import './App.css';
 import React, { useState, useRef, useEffect } from "react";
 import ColorThief from "colorthief";
 import UploadStep   from "./UploadStep";
 import AnalyzeStep  from "./AnalyzeStep";
 import SuggestStep  from "./SuggestStep";
-import products from "./products.json"; 
+import products     from "./products.json";
 
 function App() {
   // initialize state and refs
@@ -52,46 +51,17 @@ function App() {
   return (
     <div className="max-w-md mx-auto p-4">
       {step === 0 && (
-        <> {/*STEP 1: Upload*/}
-          <h2>Upload a clear selfie</h2> {/*prompt user*/}
-          <input
-            type = "file"
-            accept = "image/*"
-            onChange = {e => {
-              const f = e.target.files?.[0];
-              if (f) {
-                setImageFile(f);
-                setStep(1); //set to step 1
-              }
-            }}
-          />
-        </>
+        <UploadStep
+          onFileSelect={setImageFile}
+          goToAnalyze={() => setStep(1)}
+        />
       )}
 
-      {step === 1 && (
-        <> {/* STEP 2: Analyzing Image*/}
-          <h2>Analyzing…</h2>
-          <canvas ref={canvasRef} width={200} height={200} className="hidden"/>
-        </>
-      )}
+      {step === 1 && <AnalyzeStep canvasRef={canvasRef} />}
 
-      {step === 2 && (
-        <> {/* STEP 3: Suggestions */}
-        <h2>Your undertone is <strong>{undertone}</strong></h2>
-        <div className = "grid gap-4">
-          {products
-            .filter (p => p.tone === undertone)
-            .map(p => (
-              <div key = {p.id} className = "border p-2 rounded">
-                <img src = {p.img} alt = {p.name} className = "h-24 w-full object-cover"/>
-                <p>{p.name}</p>
-              </div>
-            ))
-          }
-        </div>
-      </>
-    )}
-  </div>
-)};
+      {step === 2 && <SuggestStep undertone={undertone} />}
+
+    </div>
+  )};
 
 export default App;
