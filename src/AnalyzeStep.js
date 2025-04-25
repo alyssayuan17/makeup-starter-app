@@ -5,10 +5,10 @@ export default function AnalyzeStep({ canvasRef }) {
     <>
       <h2>Analyzing…</h2>
       <canvas
-        ref={canvasRef}
-        width={200}
-        height={200}
-        style={{ display: 'none' }}
+        ref = {canvasRef}
+        width = {200}
+        height = {200}
+        style = {{ display: 'none' }}
       />
     </>
   );

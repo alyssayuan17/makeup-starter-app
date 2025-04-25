@@ -52,8 +52,8 @@ function App() {
     <div className="max-w-md mx-auto p-4">
       {step === 0 && (
         <UploadStep
-          onFileSelect={setImageFile}
-          goToAnalyze={() => setStep(1)}
+          onFileSelect = {setImageFile}
+          goToAnalyze = {() => setStep(1)} // refers to step one once goToAnalyze is called in UploadStep
         />
       )}
 
