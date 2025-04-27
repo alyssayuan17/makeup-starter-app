@@ -31,8 +31,8 @@ function App() {
       ctx.drawImage(img, 0, 0, W, H); // draw photo into hidden canvas (for analysis)
   
       const ct = new ColorThief(); // extract colours
-      const [r, g, b] = ct.getColor(canvas);
-      const palette = ct.getPalette(canvas, 5);
+      const [r, g, b] = ct.getColor(img);
+      const palette = ct.getPalette(img, 5);
 
       // simple threshold --> warm/cool/neutral 
       const tone = 
