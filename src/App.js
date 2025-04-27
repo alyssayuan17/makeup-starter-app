@@ -7,6 +7,7 @@ import UploadStep   from "./UploadStep";
 import AnalyzeStep  from "./AnalyzeStep";
 import SuggestStep  from "./SuggestStep";
 import products     from "./products.json";
+import * as faceapi from "face-api.js"; // import for face detection
 
 function App() {
   // initialize state and refs
@@ -18,22 +19,38 @@ function App() {
 
   useEffect(() => { // set up useEffect for image analysis
     if (step !== 1 || !imageFile) return; // only run once you’ve got an image to analyze
-  
-    const img = new Image();
-    img.crossOrigin = "anonymous"; // avoid CORS issues on canvas
 
-    img.onload = () => {
-      const canvas = canvasRef.current;
-      const ctx = canvas.getContext("2d");
-  
-      const W = canvas.width; // make sure canvas has dimensions in the JSX
-      const H = canvas.height;
+    (async () => { // load detector model
+      await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
+      const img = new Image();
+      img.crossOrigin = "anonymous"; // avoid CORS issues on canvas
 
-      ctx.drawImage(img, 0, 0, W, H); // draw photo into hidden canvas (for analysis)
+    img.onload = async () => {
+      const det = await faceapi // run face detection
+          .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+          .withBox();
+
+      let sampleSource; // decide sampling source
+    
+      if (det) {
+        // crop to the face box
+        const { x, y, width, height } = det.box;
+        const faceCanvas = document.createElement("canvas");
+        faceCanvas.width  = width;
+        faceCanvas.height = height;
+        faceCanvas
+          .getContext("2d")
+          .drawImage(img, x, y, width, height, 0, 0, width, height);
+        sampleSource = faceCanvas;
+      
+      } else {
+        console.warn("No face detected – sampling full image");
+        sampleSource = img;
+      }
   
       const ct = new ColorThief(); // extract colours
-      const [r, g, b] = ct.getColor(img);
-      const palette = ct.getPalette(img, 5);
+      const [r, g, b] = ct.getColor(sampleSource);
+      //const palette = ct.getPalette(img, 5);
 
       // simple threshold --> warm/cool/neutral 
       const tone = 
@@ -45,9 +62,8 @@ function App() {
       setLoading(false); // Finish spinner — (important)
       setStep(2); // advance to suggestions
     };
-  
-    // point at the actual file state
-    img.src = URL.createObjectURL(imageFile);
+    img.src = URL.createObjectURL(imageFile); // point at the actual file state
+    })(); // invoke the IIFE
   }, [step, imageFile]);
 
   return (
