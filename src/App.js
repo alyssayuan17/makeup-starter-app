@@ -11,6 +11,7 @@ import * as faceapi from "face-api.js"; // import for face detection
 
 function App() {
   // initialize state and refs
+  const [error, setError] = useState(null);
   const [step, setStep] = useState(0);
   const [imageFile, setImageFile] = useState(null);
   const [undertone, setUndertone] = useState(null);
@@ -32,6 +33,21 @@ function App() {
 
       let sampleSource; // decide sampling source
     
+      if (!det) {
+        console.warn("No face detected");
+    
+        setError("Please upload an image of your face.");
+        setLoading(false);
+    
+        setTimeout(() => {
+          setError(null);
+          setImageFile(null);
+          setStep(0);
+        }, 2500); // wait 2.5 seconds before resetting
+    
+        return; // exit early
+      }
+
       if (det) {
         // crop to the face box
         const { x, y, width, height } = det.box;
@@ -68,7 +84,13 @@ function App() {
 
   return (
     <div className="max-w-md mx-auto p-4">
-      {step === 0 && (
+      {error && (
+        <div className="text-center text-red-500 p-4">
+          <h2>{error}</h2>
+        </div>
+      )}
+
+      {!error && step === 0 && (
         <UploadStep
           onFileSelect={file => {
             setImageFile(file);
@@ -78,7 +100,7 @@ function App() {
         />
       )}
 
-      {step === 1 && (
+      {!error && step === 1 && (
         loading ? (
           <div className="flex justify-center items-center h-64">
             <h2 className="mr-4">Analyzing…</h2>
@@ -94,8 +116,7 @@ function App() {
         )
       )}  
 
-      {step === 2 && <SuggestStep undertone={undertone} />}
-
+      {!error && step === 2 && <SuggestStep undertone={undertone} />}
     </div>
   )};
 
