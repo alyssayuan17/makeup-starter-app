@@ -42,8 +42,8 @@ function App() {
         "neutral";
 
       setUndertone(tone); // save the result
-      setStep(2); // advance to suggestions
       setLoading(false); // Finish spinner — (important)
+      setStep(2); // advance to suggestions
     };
   
     // point at the actual file state
@@ -54,16 +54,24 @@ function App() {
     <div className="max-w-md mx-auto p-4">
       {step === 0 && (
         <UploadStep
-          onFileSelect = {setImageFile}
-          goToAnalyze = {() => setStep(1)} // refers to step one once goToAnalyze is called in UploadStep
+          onFileSelect={file => {
+            setImageFile(file);
+            setLoading(true);
+          }}
+          goToAnalyze={() => setStep(1)}
         />
       )}
 
       {step === 1 && (
         loading ? (
           <div className="flex justify-center items-center h-64">
-            <div className="spinner"></div>
-            <p>Analyzing Image...</p>
+            <h2 className="mr-4">Analyzing…</h2>
+            <canvas
+              ref={canvasRef}
+              width={200}
+              height={200}
+              style={{ border: "1px solid #ccc" }}
+            />
           </div>
         ) : (
           <AnalyzeStep canvasRef={canvasRef} />
