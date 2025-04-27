@@ -13,6 +13,7 @@ function App() {
   const [step, setStep] = useState(0);
   const [imageFile, setImageFile] = useState(null);
   const [undertone, setUndertone] = useState(null);
+  const [loading, setLoading] = useState(false);
   const canvasRef = useRef();
 
   useEffect(() => { // set up useEffect for image analysis
@@ -42,6 +43,7 @@ function App() {
 
       setUndertone(tone); // save the result
       setStep(2); // advance to suggestions
+      setLoading(false); // Finish spinner — (important)
     };
   
     // point at the actual file state
@@ -57,7 +59,16 @@ function App() {
         />
       )}
 
-      {step === 1 && <AnalyzeStep canvasRef={canvasRef} />}
+      {step === 1 && (
+        loading ? (
+          <div className="flex justify-center items-center h-64">
+            <div className="spinner"></div>
+            <p>Analyzing Image...</p>
+          </div>
+        ) : (
+          <AnalyzeStep canvasRef={canvasRef} />
+        )
+      )}  
 
       {step === 2 && <SuggestStep undertone={undertone} />}
 
