@@ -16,41 +16,34 @@ function App() {
   const [imageFile, setImageFile] = useState(null);
   const [undertone, setUndertone] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [modelLoaded, setModelLoaded] = useState(false); // boolean to gate analysis behind a condition
   const canvasRef = useRef();
 
-  useEffect(() => { // set up useEffect for image analysis
-    if (step !== 1 || !imageFile) return; // only run once you’ve got an image to analyze
+  useEffect(() => { // load face-api model once on mount
+    faceapi.nets.tinyFaceDetector
+      .loadFromUri("/models")
+      .then(() => setModelLoaded(true)) // only set boolean to true when faceapi.nets.tinyFaceDetector.loadFromUri("/models") resolves
+      .catch(err => console.error("Failed to load face-api model:", err));
+  }, []);
 
-    (async () => { // load detector model
-      await faceapi.nets.tinyFaceDetector.loadFromUri("/models");
-      const img = new Image();
-      img.crossOrigin = "anonymous"; // avoid CORS issues on canvas
+  useEffect(() => { // analyze uploaded image when ready
+    if (step !== 1 || !imageFile || !modelLoaded) return; // only run once you’ve got an image to analyze
+
+    const img = new Image();
+    img.crossOrigin = "anonymous"; // avoid CORS issues
+    const blobUrl = URL.createObjectURL(imageFile);
 
     img.onload = async () => {
-      const det = await faceapi // run face detection
-          .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-          .withBox();
+      // Run face detection
+      const det = await faceapi
+        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
+        .withBox();
       console.log("Face detection result:", det);
 
-      let sampleSource; // decide sampling source
-    
-      if (!det) {
-        console.warn("No face found; using central-crop"); // use central-crop to ensure there is always something being analyzed
-    
-        setError("Please upload an image of your face.");
-        setLoading(false);
-    
-        setTimeout(() => {
-          setError(null);
-          setImageFile(null);
-          setStep(0);
-        }, 2500); // wait 2.5 seconds before resetting
-    
-        return; // exit early
-      }
+      let sampleSource;
 
       if (det) {
-        // crop to that face box (with padding)
+        // crop to face region
         const { x, y, width, height } = det.box;
         const pad = 20;
         const sx = Math.max(0, x - pad);
@@ -58,21 +51,21 @@ function App() {
         const sW = Math.min(img.width, width + pad * 2);
         const sH = Math.min(img.height, height + pad * 2);
 
-        // create the face-only canvas
         const faceCanvas = document.createElement("canvas");
-        faceCanvas.width  = sW;
+        faceCanvas.width = sW;
         faceCanvas.height = sH;
         const fctx = faceCanvas.getContext("2d");
         fctx.drawImage(img, sx, sy, sW, sH, 0, 0, sW, sH);
 
         sampleSource = faceCanvas;
       } else {
+        // fallback: use full image canvas
         console.warn("No face detected – sampling full image");
-        // fallback: draw the whole image into your hidden canvas
-        const canvas = canvasRef.current;
-        const ctx = canvas.getContext("2d");
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        sampleSource = canvas;
+        const full = canvasRef.current;
+        const fctx = full.getContext("2d");
+        fctx.clearRect(0, 0, full.width, full.height);
+        fctx.drawImage(img, 0, 0, full.width, full.height);
+        sampleSource = full;
       }
   
       const ct = new ColorThief(); // extract colours
@@ -90,10 +83,12 @@ function App() {
       setUndertone(tone); // save the result
       setLoading(false); // Finish spinner — (important)
       setStep(2); // advance to suggestions
+
+      // cleanup object URL
+      URL.revokeObjectURL(blobUrl);
     };
-    img.src = URL.createObjectURL(imageFile); // point at the actual file state
-    })(); // invoke the IIFE
-  }, [step, imageFile]);
+    img.src = blobUrl;
+  }, [step, imageFile, modelLoaded]);
 
   return (
     <div className="max-w-md mx-auto p-4">
