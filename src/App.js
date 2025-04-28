@@ -30,11 +30,12 @@ function App() {
       const det = await faceapi // run face detection
           .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
           .withBox();
+      console.log("Face detection result:", det);
 
       let sampleSource; // decide sampling source
     
       if (!det) {
-        console.warn("No face detected");
+        console.warn("No face found; using central-crop"); // use central-crop to ensure there is always something being analyzed
     
         setError("Please upload an image of your face.");
         setLoading(false);
@@ -49,23 +50,34 @@ function App() {
       }
 
       if (det) {
-        // crop to the face box
+        // crop to that face box (with padding)
         const { x, y, width, height } = det.box;
+        const pad = 20;
+        const sx = Math.max(0, x - pad);
+        const sy = Math.max(0, y - pad);
+        const sW = Math.min(img.width, width + pad * 2);
+        const sH = Math.min(img.height, height + pad * 2);
+
+        // create the face-only canvas
         const faceCanvas = document.createElement("canvas");
-        faceCanvas.width  = width;
-        faceCanvas.height = height;
-        faceCanvas
-          .getContext("2d")
-          .drawImage(img, x, y, width, height, 0, 0, width, height);
+        faceCanvas.width  = sW;
+        faceCanvas.height = sH;
+        const fctx = faceCanvas.getContext("2d");
+        fctx.drawImage(img, sx, sy, sW, sH, 0, 0, sW, sH);
+
         sampleSource = faceCanvas;
-      
       } else {
         console.warn("No face detected – sampling full image");
-        sampleSource = img;
+        // fallback: draw the whole image into your hidden canvas
+        const canvas = canvasRef.current;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        sampleSource = canvas;
       }
   
       const ct = new ColorThief(); // extract colours
       const [r, g, b] = ct.getColor(sampleSource);
+      console.log("Raw skin RGB:", { r, g, b });
       //const palette = ct.getPalette(img, 5);
 
       // simple threshold --> warm/cool/neutral 
@@ -73,6 +85,7 @@ function App() {
         r > b + 10 ? "warm":
         b > r + 10 ? "cool":
         "neutral";
+      console.log("Mapped tone:", tone);
 
       setUndertone(tone); // save the result
       setLoading(false); // Finish spinner — (important)
