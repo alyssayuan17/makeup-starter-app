@@ -35,53 +35,82 @@ function App() {
 
     img.onload = async () => {
       // Run face detection
-      const det = await faceapi
-        .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-      console.log("Face detection result:", det);
+      const options = new faceapi.TinyFaceDetectorOptions({ inputSize: 416, scoreThreshold: 0.5 });
+      const det = await faceapi.detectSingleFace(img, options);
+      console.log("Detection result:", det);
 
       let sampleSource;
+      let validBox = false;
 
       if (det) {
         // crop to face region
         const { x, y, width, height } = det.box;
         const pad = 20;
-        const sx = Math.max(0, x - pad);
-        const sy = Math.max(0, y - pad);
-        const sW = Math.min(img.width, width + pad * 2);
-        const sH = Math.min(img.height, height + pad * 2);
+        const sx = Math.max(0, Math.round(x - pad));
+        const sy = Math.max(0, Math.round(y - pad));
+        const sW = Math.min(img.width, Math.round(width + pad * 2));
+        const sH = Math.min(img.height, Math.round(height + pad * 2));
 
-        const faceCanvas = document.createElement("canvas");
-        faceCanvas.width = sW;
-        faceCanvas.height = sH;
-        const fctx = faceCanvas.getContext("2d");
-        fctx.drawImage(img, sx, sy, sW, sH, 0, 0, sW, sH);
+        if (sW > 0 && sH > 0) {
+          const faceCanvas = document.createElement("canvas");
+          faceCanvas.width = sW;
+          faceCanvas.height = sH;
+          const fctx = faceCanvas.getContext("2d");
+          fctx.drawImage(img, sx, sy, sW, sH, 0, 0, sW, sH);
+          sampleSource = faceCanvas;
+          validBox = true;
+        } else {
+          console.warn("Invalid cropped dimensions:", { sW, sH });
+        }
+      }
 
-        sampleSource = faceCanvas;
-      } else {
-        // fallback: use full image canvas
-        console.warn("No face detected – sampling full image");
+      if (!validBox) {
         const full = canvasRef.current;
+        full.width = img.width;
+        full.height = img.height;
         const fctx = full.getContext("2d");
         fctx.clearRect(0, 0, full.width, full.height);
         fctx.drawImage(img, 0, 0, full.width, full.height);
         sampleSource = full;
       }
-  
-      const ct = new ColorThief(); // extract colours
-      const [r, g, b] = ct.getColor(sampleSource);
-      console.log("Raw skin RGB:", { r, g, b });
-      //const palette = ct.getPalette(img, 5);
 
-      // simple threshold --> warm/cool/neutral 
-      const tone = 
-        r > b + 10 ? "warm":
-        b > r + 10 ? "cool":
-        "neutral";
-      console.log("Mapped tone:", tone);
+      // Validate canvas size before passing to ColorThief
+      if (!sampleSource || sampleSource.width === 0 || sampleSource.height === 0) {
+        console.error("Invalid canvas dimensions for ColorThief.");
+        setError("Could not extract color – invalid canvas.");
+        setLoading(false);
+        return;
+      }
 
-      setUndertone(tone); // save the result
+
+      try {
+        const ct = new ColorThief();
+        const [r, g, b] = ct.getColor(sampleSource);
+        console.log("Extracted RGB:", { r, g, b });
+    
+        const tone = r > b + 10 ? "warm" : b > r + 10 ? "cool" : "neutral";
+        setUndertone(tone);
+        setStep(2);
+      } catch (err) {
+        console.error("ColorThief error:", err);
+        setError("Failed to extract color.");
+      }
+
+      // const ct = new ColorThief(); // extract colours
+      // const [r, g, b] = ct.getColor(sampleSource);
+      // console.log("Raw skin RGB:", { r, g, b });
+      // //const palette = ct.getPalette(img, 5);
+
+      // // simple threshold --> warm/cool/neutral 
+      // const tone = 
+      //   r > b + 10 ? "warm":
+      //   b > r + 10 ? "cool":
+      //   "neutral";
+      // console.log("Mapped tone:", tone);
+
+      // setUndertone(tone); // save the result
       setLoading(false); // Finish spinner — (important)
-      setStep(2); // advance to suggestions
+      // setStep(2); // advance to suggestions
 
       // cleanup object URL
       URL.revokeObjectURL(blobUrl);
