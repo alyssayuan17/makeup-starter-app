@@ -45,17 +45,18 @@ function App() {
       if (det) {
         // crop to face region
         const { x, y, width, height } = det.box;
-        const pad = 20;
 
-        const sx = x - pad;
-        const sy = y - pad;
-        const sW = width + pad * 2;
-        const sH = height + pad * 2;
+        
+        // target cheek region (adjust ratios as needed)
+        const cheekX = x + width * 0.3; // target sampling areas more precisely
+        const cheekY = y + height * 0.6;
+        const cheekW = width * 0.2;
+        const cheekH = height * 0.2;
 
-        const sxInt = Math.max(0, Math.floor(sx));
-        const syInt = Math.max(0, Math.floor(sy));
-        const sWInt = Math.min(img.width - sxInt, Math.floor(sW));
-        const sHInt = Math.min(img.height - syInt, Math.floor(sH));
+        const sxInt = Math.max(0, Math.floor(cheekX));
+        const syInt = Math.max(0, Math.floor(cheekY));
+        const sWInt = Math.min(img.width - sxInt, Math.floor(cheekW));
+        const sHInt = Math.min(img.height - syInt, Math.floor(cheekH));
 
         if (sWInt > 0 && sHInt > 0) {
           canvas.width = sWInt;
@@ -108,21 +109,7 @@ function App() {
         setError("Failed to extract color.");
       } 
 
-      // const ct = new ColorThief(); // extract colours
-      // const [r, g, b] = ct.getColor(sampleSource);
-      // console.log("Raw skin RGB:", { r, g, b });
-      // //const palette = ct.getPalette(img, 5);
-
-      // // simple threshold --> warm/cool/neutral 
-      // const tone = 
-      //   r > b + 10 ? "warm":
-      //   b > r + 10 ? "cool":
-      //   "neutral";
-      // console.log("Mapped tone:", tone);
-
-      // setUndertone(tone); // save the result
       setLoading(false); // Finish spinner — (important)
-      // setStep(2); // advance to suggestions
 
       // cleanup object URL
       URL.revokeObjectURL(blobUrl);
