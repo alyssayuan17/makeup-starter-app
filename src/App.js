@@ -46,21 +46,31 @@ function App() {
         // crop to face region
         const { x, y, width, height } = det.box;
         const pad = 20;
-        const sx = Math.max(0, Math.round(x - pad));
-        const sy = Math.max(0, Math.round(y - pad));
-        const sW = Math.min(img.width, Math.round(width + pad * 2));
-        const sH = Math.min(img.height, Math.round(height + pad * 2));
 
-        if (sW > 0 && sH > 0) {
-          const faceCanvas = document.createElement("canvas");
-          faceCanvas.width = sW;
-          faceCanvas.height = sH;
-          const fctx = faceCanvas.getContext("2d");
-          fctx.drawImage(img, sx, sy, sW, sH, 0, 0, sW, sH);
-          sampleSource = faceCanvas;
-          validBox = true;
+        const sx = x - pad;
+        const sy = y - pad;
+        const sW = width + pad * 2;
+        const sH = height + pad * 2;
+
+        const sxInt = Math.max(0, Math.floor(sx));
+        const syInt = Math.max(0, Math.floor(sy));
+        const sWInt = Math.min(img.width - sxInt, Math.floor(sW));
+        const sHInt = Math.min(img.height - syInt, Math.floor(sH));
+        // const sx = Math.max(0, Math.round(x - pad));
+        // const sy = Math.max(0, Math.round(y - pad));
+        // const sW = Math.min(img.width, Math.round(width + pad * 2));
+        // const sH = Math.min(img.height, Math.round(height + pad * 2));
+
+        if (sWInt > 0 && sHInt > 0) {
+          const visibleCanvas = canvasRef.current;
+          visibleCanvas.width = sWInt;
+          visibleCanvas.height = sHInt;
+          const ctx = visibleCanvas.getContext("2d");
+          ctx.clearRect(0, 0, sWInt, sHInt);
+          ctx.drawImage(img, sxInt, syInt, sWInt, sHInt, 0, 0, sWInt, sHInt);
+          sampleSource = visibleCanvas;
         } else {
-          console.warn("Invalid cropped dimensions:", { sW, sH });
+          console.warn("Invalid cropped dimensions:", { sWInt, sHInt });
         }
       }
 
@@ -77,6 +87,18 @@ function App() {
       // Validate canvas size before passing to ColorThief
       if (!sampleSource || sampleSource.width === 0 || sampleSource.height === 0) {
         console.error("Invalid canvas dimensions for ColorThief.");
+      
+        if (sampleSource) {
+          // Only try to access context if sampleSource exists
+          try {
+            const ctx = sampleSource.getContext("2d");
+            const px = ctx.getImageData(0, 0, 1, 1).data;
+            console.log("Pixel data sample:", px);
+          } catch (e) {
+            console.warn("Failed to read pixel data:", e);
+          }
+        }
+      
         setError("Could not extract color – invalid canvas.");
         setLoading(false);
         return;
@@ -144,7 +166,7 @@ function App() {
               ref={canvasRef}
               width={200}
               height={200}
-              className="hidden"
+              className="invisible absolute"
             />
           </div>
         ) : (
