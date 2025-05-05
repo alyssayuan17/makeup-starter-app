@@ -39,8 +39,8 @@ function App() {
       const det = await faceapi.detectSingleFace(img, options);
       console.log("Detection result:", det);
 
+      const canvas = canvasRef.current;
       let sampleSource;
-      let validBox = false;
 
       if (det) {
         // crop to face region
@@ -56,67 +56,57 @@ function App() {
         const syInt = Math.max(0, Math.floor(sy));
         const sWInt = Math.min(img.width - sxInt, Math.floor(sW));
         const sHInt = Math.min(img.height - syInt, Math.floor(sH));
-        // const sx = Math.max(0, Math.round(x - pad));
-        // const sy = Math.max(0, Math.round(y - pad));
-        // const sW = Math.min(img.width, Math.round(width + pad * 2));
-        // const sH = Math.min(img.height, Math.round(height + pad * 2));
 
         if (sWInt > 0 && sHInt > 0) {
-          const visibleCanvas = canvasRef.current;
-          visibleCanvas.width = sWInt;
-          visibleCanvas.height = sHInt;
-          const ctx = visibleCanvas.getContext("2d");
+          canvas.width = sWInt;
+          canvas.height = sHInt;
+          const ctx = canvas.getContext("2d");
           ctx.clearRect(0, 0, sWInt, sHInt);
           ctx.drawImage(img, sxInt, syInt, sWInt, sHInt, 0, 0, sWInt, sHInt);
-          sampleSource = visibleCanvas;
-        } else {
-          console.warn("Invalid cropped dimensions:", { sWInt, sHInt });
+          sampleSource = canvas;
+          console.log("Sample source set (face):", canvas.width, canvas.height);
         }
       }
 
-      if (!validBox) {
-        const full = canvasRef.current;
-        full.width = img.width;
-        full.height = img.height;
-        const fctx = full.getContext("2d");
-        fctx.clearRect(0, 0, full.width, full.height);
-        fctx.drawImage(img, 0, 0, full.width, full.height);
-        sampleSource = full;
+      if (!sampleSource) { // fallback to full image if no face or invalid box
+        canvas.width = img.width;
+        canvas.height = img.height;
+        const ctx = canvas.getContext("2d");
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        sampleSource = canvas;
+        console.log("Sample source set (fallback):", canvas.width, canvas.height);
       }
 
       // Validate canvas size before passing to ColorThief
       if (!sampleSource || sampleSource.width === 0 || sampleSource.height === 0) {
         console.error("Invalid canvas dimensions for ColorThief.");
-      
-        if (sampleSource) {
-          // Only try to access context if sampleSource exists
-          try {
-            const ctx = sampleSource.getContext("2d");
-            const px = ctx.getImageData(0, 0, 1, 1).data;
-            console.log("Pixel data sample:", px);
-          } catch (e) {
-            console.warn("Failed to read pixel data:", e);
-          }
+
+        try {
+          const ctx = sampleSource?.getContext("2d");
+          const px = ctx?.getImageData(0, 0, 1, 1).data;
+          console.log("Pixel data sample:", px);
+        } catch (e) {
+          console.warn("Failed to read pixel data:", e);
         }
-      
+
         setError("Could not extract color – invalid canvas.");
         setLoading(false);
         return;
-      }
-
+      } 
 
       try {
-        const ct = new ColorThief();
-        const [r, g, b] = ct.getColor(sampleSource);
+        //const ct = new ColorThief();
+        const [r, g, b] = getAverageColorFromCanvas(sampleSource);
         console.log("Extracted RGB:", { r, g, b });
-    
+      
         const tone = r > b + 10 ? "warm" : b > r + 10 ? "cool" : "neutral";
         setUndertone(tone);
         setStep(2);
       } catch (err) {
         console.error("ColorThief error:", err);
         setError("Failed to extract color.");
-      }
+      } 
 
       // const ct = new ColorThief(); // extract colours
       // const [r, g, b] = ct.getColor(sampleSource);
@@ -139,6 +129,21 @@ function App() {
     };
     img.src = blobUrl;
   }, [step, imageFile, modelLoaded]);
+
+  function getAverageColorFromCanvas(canvas) { // custom solution
+    const ctx = canvas.getContext("2d");
+    const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  
+    let r = 0, g = 0, b = 0, count = 0;
+    for (let i = 0; i < data.length; i += 4) {
+      r += data[i];
+      g += data[i + 1];
+      b += data[i + 2];
+      count++;
+    }
+  
+    return [Math.round(r / count), Math.round(g / count), Math.round(b / count)];
+  }
 
   return (
     <div className="max-w-md mx-auto p-4">
