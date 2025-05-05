@@ -37,7 +37,6 @@ function App() {
       // Run face detection
       const det = await faceapi
         .detectSingleFace(img, new faceapi.TinyFaceDetectorOptions())
-        .withBox();
       console.log("Face detection result:", det);
 
       let sampleSource;
