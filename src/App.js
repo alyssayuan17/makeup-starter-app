@@ -17,6 +17,7 @@ function App() {
   const [undertone, setUndertone] = useState(null);
   const [loading, setLoading] = useState(false);
   const [modelLoaded, setModelLoaded] = useState(false); // boolean to gate analysis behind a condition
+  const [skinType, setSkinType] = useState("normal"); // variable for skin type
   const canvasRef = useRef();
 
   useEffect(() => { // load face-api model once on mount
@@ -40,6 +41,7 @@ function App() {
       console.log("Detection result:", det);
 
       const canvas = canvasRef.current;
+      
       let sampleSource;
 
       if (det) {
@@ -146,6 +148,7 @@ function App() {
             setImageFile(file);
             setLoading(true);
           }}
+          setSkinType = {setSkinType}
           goToAnalyze={() => setStep(1)}
         />
       )}
@@ -162,11 +165,11 @@ function App() {
             />
           </div>
         ) : (
-          <AnalyzeStep canvasRef={canvasRef} />
+          <AnalyzeStep canvasRef={canvasRef} skinType={skinType} setSkinType={setSkinType} />
         )
       )}  
 
-      {!error && step === 2 && <SuggestStep undertone={undertone} />}
+      {!error && step === 2 && <SuggestStep undertone={undertone} skinType={skinType}/>}
     </div>
   )};
 

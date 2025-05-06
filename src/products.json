@@ -3,18 +3,23 @@
       "id": "warm1",
       "name": "Peachy Glow Blush",
       "tone": "warm",
-      "img": "/images/peachy-glow.jpg"
+      "skinType": ["dry", "normal"],
+      "img": "/images/peachy-glow.jpg",
+      "reason": "Peach blush flatters warm skin by enhancing natural radiance."
     },
     {
       "id": "cool1",
       "name": "Rosy Chill Lipstick",
       "tone": "cool",
-      "img": "/images/rosy-chill.jpg"
+      "skinType": ["oily", "sensitive"],
+      "img": "/images/rosy-chill.jpg",
+      "reason": "This lightweight formula balances cool undertones and oily skin."
     },
     {
       "id": "neutral1",
       "name": "Everyday Bronze Palette",
       "tone": "neutral",
+      "skinType": ["dry", "normal", "oily", "sensitive"],
       "img": "/images/bronze-palette.jpg"
     }
 ]
