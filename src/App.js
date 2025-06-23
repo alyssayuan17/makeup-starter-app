@@ -8,6 +8,7 @@ import AnalyzeStep  from "./AnalyzeStep";
 import SuggestStep  from "./SuggestStep";
 import products     from "./products.json";
 import * as faceapi from "face-api.js"; // import for face detection
+import { Helmet } from "react-helmet"; 
 
 function App() {
   // initialize state and refs
@@ -135,42 +136,53 @@ function App() {
   }
 
   return (
-    <div className="max-w-md mx-auto p-4">
-      {error && (
-        <div className="text-center text-red-500 p-4">
-          <h2>{error}</h2>
-        </div>
-      )}
-
-      {!error && step === 0 && (
-        <UploadStep
-          onFileSelect={file => {
-            setImageFile(file);
-            setLoading(true);
-          }}
-          setSkinType = {setSkinType}
-          goToAnalyze={() => setStep(1)}
-        />
-      )}
-
-      {!error && step === 1 && (
-        loading ? (
-          <div className="flex justify-center items-center h-64">
-            <h2 className="mr-4">Analyzing…</h2>
-            <canvas
-              ref={canvasRef}
-              width={200}
-              height={200}
-              className="invisible absolute"
-            />
+    <>
+      <Helmet>
+          <link rel="preconnect" href="https://fonts.googleapis.com" />
+          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+          <link
+            href="https://fonts.googleapis.com/css2?family=Funnel+Display:wght@300..800&family=Kranky&family=Lavishly+Yours&family=Quintessential&family=Viaoda+Libre&display=swap"
+            rel="stylesheet"
+          />
+        </Helmet>
+      <div className="max-w-md mx-auto p-4">
+        {error && (
+          <div className="text-center text-red-500 p-4">
+            <h2>{error}</h2>
           </div>
-        ) : (
-          <AnalyzeStep canvasRef={canvasRef} skinType={skinType} setSkinType={setSkinType} />
-        )
-      )}  
+        )}
 
-      {!error && step === 2 && <SuggestStep undertone={undertone} skinType={skinType}/>}
-    </div>
-  )};
+        {!error && step === 0 && (
+          <UploadStep
+            onFileSelect={(file) => {
+              setImageFile(file);
+              setLoading(true);
+            }}
+            setSkinType={setSkinType}
+            goToAnalyze={() => setStep(1)}
+          />
+        )}
+
+        {!error && step === 1 && (
+          loading ? (
+            <div className="flex justify-center items-center h-64">
+              <h2 className="mr-4">Analyzing…</h2>
+              <canvas
+                ref={canvasRef}
+                width={200}
+                height={200}
+                className="invisible absolute"
+              />
+            </div>
+          ) : (
+            <AnalyzeStep canvasRef={canvasRef} skinType={skinType} setSkinType={setSkinType} />
+          )
+        )}
+
+        {!error && step === 2 && <SuggestStep undertone={undertone} skinType={skinType} />}
+      </div>
+    </>
+  );
+}
 
 export default App;
